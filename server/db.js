@@ -1,127 +1,95 @@
 const { createClient } = require('redis');
-const mysql = require('mysql2/promise');
+const User = require('./model/userModel'); // Import User model
 
-let client;
-const REQUEST_INTERVAL = 5000; // 10 seconds
-const MYSQL_CONFIG = {
-    host: 'localhost',
-    user: 'root',
-    database: 'riot',
-    password: '',
-};
+let redisClient;
+const REQUEST_INTERVAL = 10000; // 10 seconds interval for syncing
 
-const lastRequestTime = {}; // Track last request time for each user
-
+// Initialize Redis connection
 async function connectToRedis() {
     try {
-        client = createClient();
-        client.on('error', (error) => {
-            console.error(`Redis client error:`, error);
+        redisClient = createClient();
+        redisClient.on('error', (error) => {
+            console.error('Redis client error:', error);
         });
-        await client.connect();
+        await redisClient.connect();
         console.log('Connected to Redis');
-    } catch (e) {
-        console.error(e);
+    } catch (error) {
+        console.error('Error connecting to Redis:', error);
     }
 }
 
-async function connectToMySQL() {
+// Fetch all keys from Redis
+async function getAllKeys() {
     try {
-        const connection = await mysql.createConnection(MYSQL_CONFIG);
-        console.log('Connected to MySQL');
-        return connection;
-    } catch (e) {
-        console.error('MySQL connection error:', e);
+        const keys = await redisClient.keys('*'); // Fetch all keys
+        return keys;
+    } catch (error) {
+        console.error('Error fetching all keys from Redis:', error);
+        throw error;
     }
 }
 
-async function sendDataToMySQL(connection, data) {
+// Fetch user data from Redis
+async function getUserDataFromRedis(id) {
     try {
-        const query = `
-            INSERT INTO user (tgId, exp, balance, energy, lvl, coin_multiplier) 
-            VALUES (?, ?, ?, ?, ?, ?) 
-            ON DUPLICATE KEY UPDATE 
-                exp = VALUES(exp), 
-                balance = VALUES(balance), 
-                energy = VALUES(energy), 
-                lvl = VALUES(lvl),
-                coin_multiplier = VALUES(coin_multiplier);
-        `;
-        await connection.execute(query, [
-            data.id, // Use 'id' here
-            data.exp,
-            data.balance,
-            data.energy,
-            data.lvl,
-            data.coin_multiplier
-        ]);
-        console.log('User data processed in MySQL:', data);
-    } catch (e) {
-        console.error('Error sending data to MySQL:', e);
+        const value = await redisClient.get(`user:${id}`);
+        return value ? JSON.parse(value) : null;
+    } catch (error) {
+        console.error(`Error fetching user data for ID ${id} from Redis:`, error);
+        throw error;
     }
 }
 
-async function pollRedis(connection) {
-    setInterval(async () => {
-        const users = Object.keys(lastRequestTime);
-
-        for (const id of users) {
-            const currentTime = Date.now();
-            if (currentTime - lastRequestTime[id] > REQUEST_INTERVAL) {
-                const value = await client.get(`tap:${id}`);
-                if (value) {
-                    const data = parseData(value);
-                    await sendDataToMySQL(connection, data);
-                    await client.del(`tap:${id}`); // Clear the Redis key after sending
-                    delete lastRequestTime[id]; // Remove from tracking
-                    console.log(`Data cleared from Redis after sending to MySQL for ${id}`);
-                }
-            }
-        }
-    }, 5000); // Check every 5 seconds
-}
-
-function parseData(value) {
-    const dataParts = value.split(' ');
-    const id = dataParts[0].split(':')[1]; // Use 'id'
-    const exp = parseInt(dataParts[1].split(':')[1]);
-    const balance = parseFloat(dataParts[2].split(':')[1]);
-    const energy = parseInt(dataParts[3].split(':')[1]);
-    const lvl = parseInt(dataParts[4].split(':')[1]);
-    const coin_multiplier = parseFloat(dataParts[5].split(':')[1]);
-
-    return { id, exp, balance, energy, lvl, coin_multiplier }; // Include 'id' in returned data
-}
-
-async function sendDataToRedis(data) {
-    console.log('[REDIS] Sending data to Redis:', data);
-
-    if (!client) {
-        console.error('Redis client is not connected');
-        return;
-    }
-
+// Save user data to Redis
+async function saveUserDataToRedis(userData) {
     try {
-        const userKey = `tap:${data.id}`; // Unique key for each user
-        await client.set(userKey, `tgId:${data.id} Exp:${data.exp} Balance:${data.balance} Energy:${data.energy} Lvl:${data.lvl} CoinMultiplier:${data.coin_multiplier}`);
-        lastRequestTime[data.id] = Date.now(); // Update last request time
-        const value = await client.get(userKey);
-        console.log('Stored value:', value);
-    } catch (e) {
-        console.error('Error sending data to Redis:', e);
+        await redisClient.set(`user:${userData.tgId}`, JSON.stringify(userData));
+        // Log only when saving fails
+    } catch (error) {
+        console.error(`Error saving user data for ID ${userData.tgId} to Redis:`, error);
+        throw error;
     }
 }
 
-// Main function to connect and start polling
-async function main() {
-    await connectToRedis();
-    const mysqlConnection = await connectToMySQL();
-    await pollRedis(mysqlConnection);
+// Delete user data from Redis
+async function deleteUserDataFromRedis(id) {
+    try {
+        await redisClient.del(`user:${id}`);
+        // Log only when deleting fails
+    } catch (error) {
+        console.error(`Error deleting user data for ID ${id} from Redis:`, error);
+        throw error;
+    }
 }
 
-main().catch((e) => console.error('Error in main:', e));
+// Fetch user data from SQL
+async function getUserDataFromSQL(tgId) {
+    try {
+        const user = await User.findOne({ where: { tgId } });
+        return user ? user.toJSON() : null;
+    } catch (error) {
+        console.error(`Error fetching user data for ID ${tgId} from SQL:`, error);
+        throw error;
+    }
+}
+
+// Save or update user data in SQL
+async function saveUserDataToSQL(userData) {
+    try {
+        await User.upsert(userData); // upsert is used to insert or update
+        // Log only when saving fails
+    } catch (error) {
+        console.error(`Error saving user data for ID ${userData.tgId} to SQL:`, error);
+        throw error;
+    }
+}
 
 module.exports = {
-    sendDataToRedis,
     connectToRedis,
+    getUserDataFromRedis,
+    saveUserDataToRedis,
+    deleteUserDataFromRedis,
+    getUserDataFromSQL,
+    saveUserDataToSQL,
+    getAllKeys,
 };

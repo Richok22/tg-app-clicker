@@ -7,7 +7,23 @@ interface LoadingState {
     isReady: boolean;
 }
 
-interface UserData {
+// interface UserData {
+//     tgId: any;
+//     username: string;
+//     balance: number;
+//     lvl: number;
+//     exp: number;
+//     maxExp: number;
+//     daily: number;
+//     energy: number;
+//     maxEnergy: number;
+//     coin_multiplier: number;
+//     energy_multiplier: number;
+//     activeTab: string;
+//     referralCode: string;
+// }
+
+type UserData = {
     tgId: any;
     username: string;
     balance: number;
@@ -36,13 +52,21 @@ interface FriendData {
     balance: number;
 }
 
+
+type MyState = {
+    loading: LoadingState;
+    userData?: UserData | null;
+    FriendData?: FriendData | null;
+    tasks: Task[];
+};
+
 export const useGlobalStore = defineStore('global', {
     state: () => ({
-        loading: {loading: true, isReady: false} as LoadingState,
-        userData: null as UserData | null,
-        FriendData: null as FriendData | null,
-        tasks: [] as Task[],
-    }),
+        loading: {loading: true, isReady: false},
+        userData: null,
+        FriendData: null,
+        tasks: [],
+    } as MyState),
     getters: {
         isLoading: (state): boolean => state.loading.loading,
         isReady: (state): boolean => state.loading.isReady,
@@ -60,9 +84,6 @@ export const useGlobalStore = defineStore('global', {
                     tgId: this.userData.tgId,
                     username: this.userData.username,
                 }, {
-                    headers: {
-                        "ngrok-skip-browser-warning": "true"
-                    }
                 });
 
                 if (response.data.created) {
@@ -84,15 +105,11 @@ export const useGlobalStore = defineStore('global', {
             }
 
             try {
-                const response = await axios.get(import.meta.env.VITE_API_URL + `/api/users/${this.userData.tgId}`, {
-                    headers: {
-                        "ngrok-skip-browser-warning": "true"
-                    }
-                });
+                const response = await axios.get(import.meta.env.VITE_API_URL + `/api/load/${this.userData.tgId}`, {});
                 this.userData = response.data;
                 console.log('User data loaded:', this.userData);
             } catch (error) {
-                console.error('Failed to load user data:', error);
+                console.error('Failed to load user  data:', error);
             }
         },
         async getUserData(): Promise<UserData> {

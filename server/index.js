@@ -5,16 +5,22 @@ require('dotenv').config();
 
 const { Telegraf } = require('telegraf');
 const { Server } = require('socket.io');
-
 const express = require('express');
-const app = express();
+const cors = require('cors');
 
 const redis_db = require('./db');
 const sequelize = require('./db_sql'); // Import Sequelize instance
-const userModel = require('./model/userModel'); // Ensure correct path
+const User = require('./model/userModel'); // Ensure correct path
 
-const cors = require('cors');
-app.use(cors());
+const app = express();
+
+// CORS configuration
+const corsOptions = {
+    origin: ['https://1e3e88df6d97a2.lhr.life'], // List the allowed origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api', router);
 
@@ -40,11 +46,101 @@ bot.start((ctx) => {
 const io = new Server(server, {
     perMessageDeflate: false,
     cors: {
-        origin: "https://e5191b1b7a123b.lhr.life", // Replace with your frontend URL
+        origin: "https://1e3e88df6d97a2.lhr.life", // Replace with your frontend URL
         methods: ["GET", "POST"],
         credentials: true
     }
 });
+
+// Track last request time for each user
+const userLastRequestTime = new Map();
+const SYNC_INTERVAL = 5000; // Interval to check for inactivity
+const REQUEST_INTERVAL = 3000; // Time to sync data if no requests
+const BATCH_SIZE = 50; // Number of records to process per batch
+
+let lastSyncLog = Date.now();
+
+let wasPreviousCheckEmpty = false; // Track the previous state of key presence
+
+async function syncRedisToSQL() {
+    try {
+        const now = Date.now();
+        if (now - lastSyncLog >= SYNC_INTERVAL) {
+            lastSyncLog = now;
+        }
+
+        const keys = await redis_db.getAllKeys(); // Get all keys from Redis
+
+        if (keys.length === 0) {
+            if (!wasPreviousCheckEmpty) {
+                wasPreviousCheckEmpty = true; // Update flag to indicate previous check was empty
+            }
+            return;
+        }
+
+        wasPreviousCheckEmpty = false; // Reset the flag since keys are found
+
+        // Process user data in batches
+        for (let i = 0; i < keys.length; i += BATCH_SIZE) {
+            const batchKeys = keys.slice(i, i + BATCH_SIZE);
+            const batchPromises = batchKeys.map(async (key) => {
+                const id = key.split(':')[1];
+                const userData = await redis_db.getUserDataFromRedis(id);
+
+                if (!userData) {
+                    console.log(`No user data found in Redis for ID ${id}`);
+                    return;
+                }
+
+                try {
+                    await User.upsert({
+                        tgId: userData.tgId,
+                        balance: userData.balance,
+                        lvl: userData.lvl,
+                        exp: userData.exp,
+                        maxExp: userData.maxExp,
+                        daily: userData.daily,
+                        energy: userData.energy,
+                        maxEnergy: userData.maxEnergy,
+                        coin_multiplier: userData.coin_multiplier,
+                        energy_multiplier: userData.energy_multiplier,
+                    });
+                    // Remove the processed key from Redis
+                    await redis_db.deleteUserDataFromRedis(id);
+                } catch (error) {
+                    console.error(`Error saving user data for ID ${id}:`, error);
+                }
+            });
+
+            await Promise.all(batchPromises);
+
+            // Log batch completion every 5th batch
+            if (i % (5 * BATCH_SIZE) === 0) {
+                console.log(`Processed batch of ${batchKeys.length} records.`);
+            }
+        }
+
+        console.log('Sync completed.');
+    } catch (error) {
+        console.error('Error syncing Redis data to SQL:', error);
+    }
+}
+
+function startSyncInterval() {
+    console.log(`Starting sync interval every ${SYNC_INTERVAL / 1000} seconds`);
+    setInterval(async () => {
+        try {
+            const now = Date.now();
+            const timeSinceLastRequest = now - Math.max(...userLastRequestTime.values());
+
+            if (timeSinceLastRequest >= REQUEST_INTERVAL) {
+                await syncRedisToSQL();
+            }
+        } catch (error) {
+            console.error('Error during interval sync:', error);
+        }
+    }, SYNC_INTERVAL);
+}
 
 (async () => {
     try {
@@ -58,28 +154,74 @@ const io = new Server(server, {
         console.log('Database synchronized.');
 
         // Start the server
-        server.listen(process.env.WEBSOCKET_PORT, () => {
-            console.log('Websocket is running on port: ' + process.env.WEBSOCKET_PORT);
+        server.listen(process.env.WEBSOCKET_PORT || port, () => {
+            console.log('Websocket is running on port: ' + (process.env.WEBSOCKET_PORT || port));
         });
 
-        // Socket.io events
         io.on('connection', (socket) => {
-            socket.on('user_tap', (id, balance, energy, exp, lvl, coin_multiplier) => {
-                console.log("[SOCKET] User:" + id + " Exp:" + exp + " Balance:" + balance + " Energy:" + energy + "LVL:" + lvl + "CoinMultiplier:" + coin_multiplier);
-                let data = { id, exp, balance, energy, lvl, coin_multiplier };
-                redis_db.sendDataToRedis(data);
-            });
+            console.log('A user connected:', socket.id);
 
+            socket.on('user_tap', async (id) => {
+                try {
+                    userLastRequestTime.set(id, Date.now());
+
+                    let userData = await redis_db.getUserDataFromRedis(id);
+
+                    if (!userData) {
+                        userData = await redis_db.getUserDataFromSQL(id);
+                    }
+
+                    // Perform the user tap updates
+                    userData.balance += 1 * userData.coin_multiplier;
+                    userData.energy--;
+                    userData.exp++;
+
+                    if (userData.maxExp === userData.exp) {
+                        userData.lvl++;
+                        userData.maxExp *= 3;
+                        userData.exp = 0;
+
+                        if (userData.lvl >= 3) {
+                            userData.coin_multiplier += 1;
+                        }
+
+                        if (userData.lvl >= 5) {
+                            userData.maxEnergy *= userData.energy_multiplier;
+                            userData.energy = userData.maxEnergy;
+                        }
+                    }
+
+                    await redis_db.saveUserDataToRedis(userData);
+
+                    socket.emit('user_data_update', {
+                        balance: userData.balance,
+                        lvl: userData.lvl,
+                        exp: userData.exp,
+                        maxExp: userData.maxExp,
+                        daily: userData.daily,
+                        energy: userData.energy,
+                        maxEnergy: userData.maxEnergy,
+                        coin_multiplier: userData.coin_multiplier,
+                        energy_multiplier: userData.energy_multiplier
+                    });
+
+                } catch (error) {
+                    console.error('Error handling user tap:', error);
+                }
+            });
         });
 
         // Start the bot and Express server
         app.listen(port, () => {
-            console.log(`Bot started!`);
+            console.log(`Express server started on port ${port}`);
             bot.launch();
 
             process.once('SIGINT', () => bot.stop('SIGINT'));
             process.once('SIGTERM', () => bot.stop('SIGTERM'));
         });
+
+        // Start the sync interval
+        startSyncInterval();
     } catch (error) {
         console.error('Unable to connect to the database:', error);
     }

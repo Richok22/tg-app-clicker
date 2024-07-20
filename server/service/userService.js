@@ -1,37 +1,34 @@
-const { User } = require('../model/userModel');
-const { v4: uuidv4 } = require('uuid');
+const User = require('../model/userModel');
 
 class UserService {
     async registration(tgId, username, photoUrl) {
         try {
-            const existingUser = await User.findOne({ where: { tgId } });
-            if (existingUser) {
-                return { user: existingUser, created: false };
-            }
-
-            const newUser = await User.create({
-                tgId,
-                username,
-                photoUrl,
-                referralCode: uuidv4()
+            const [user, created] = await User.findOrCreate({
+                where: { tgId },
+                defaults: {
+                    username,
+                    photoUrl,
+                    tgId,
+                }
             });
 
-            return { user: newUser, created: true };
+            console.log(created ? 'New user created:' : 'Existing user found:',);
+            return { user, created };
         } catch (error) {
-            return { error: error.message, created: false };
+            console.error('Error in user registration:', error);
+            throw error;
         }
     }
 
     async findByTgId(tgId) {
         try {
-            const user = await User.findOne({ where: { tgId } });
-            return user || null;
+            const user = await User.findByPk(tgId);
+            return user;
         } catch (error) {
             console.error('Error finding user:', error);
-            throw new Error('Error retrieving user data');
+            throw error;
         }
     }
 }
-
 
 module.exports = new UserService();

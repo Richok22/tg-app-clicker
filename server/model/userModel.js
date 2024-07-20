@@ -74,6 +74,4 @@ const User = sequelize.define('User', {
     freezeTableName: true, // Prevent Sequelize from pluralizing the table name
 });
 
-module.exports = {
-    User
-};
+module.exports = User;

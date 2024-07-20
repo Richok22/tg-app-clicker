@@ -22,4 +22,4 @@ socket.on("disconnect", () => {
     console.log('Client disconnected');
 });
 
-export default new socket;
+export default socket;

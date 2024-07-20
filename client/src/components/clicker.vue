@@ -1,49 +1,28 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useGlobalStore } from '../store/globalStore.ts';
 import { useWebAppHapticFeedback } from 'vue-tg';
-import { socket } from "../socket";
+import socket from '../socket.ts';
 
+// Access the store and create a reactive reference to userData
 const store = useGlobalStore();
+const userData = computed(() => store.userData);
 
 const showPlusOne = ref(false);
 const plusOnePosition = ref({ top: '0px', left: '0px' });
 const plusOneKey = ref(0);
 const isActive = ref(false);
 
-const incrementBalance = async () => {
-  if (store.userData && store.userData.energy > 0) {
+// Function to increment balance
+const incrementBalance = () => {
+  if (userData.value && userData.value.energy > 0) {
     useWebAppHapticFeedback().impactOccurred("medium");
 
-    // Update local store data
-    store.userData.balance += 1 * store.userData.coin_multiplier;
-    store.userData.energy--;
-    store.userData.exp++;
-
-    const { balance, energy, exp, tgId, lvl, coin_multiplier } = store.userData;
-
-    // Emit data to server
-    socket.timeout(5000).emit("user_tap", tgId, balance, energy, exp, lvl, coin_multiplier, () => {
-      console.log("Sent tap data #" + store.userData?.tgId);
+    const { tgId } = userData.value;
+    socket.timeout(5000).emit("user_tap", tgId, () => {
+      console.log("Sent tap data #" + tgId);
     });
 
-    // Update user data based on experience
-    if (store.userData.maxExp === store.userData.exp) {
-      store.userData.lvl++;
-      store.userData.maxExp *= 3;
-      store.userData.exp = 0;
-
-      if (store.userData.lvl >= 3) {
-        store.userData.coin_multiplier += 1;
-      }
-
-      if (store.userData.lvl >= 5) {
-        store.userData.maxEnergy *= store.userData.energy_multiplier;
-        store.userData.energy = store.userData.maxEnergy;
-      }
-    }
-
-    // Update plus one position and key for animation
     plusOnePosition.value = {
       top: `${Math.random() * 4}rem`,
       left: `${Math.random() * 6}rem`,
@@ -52,14 +31,15 @@ const incrementBalance = async () => {
     plusOneKey.value++;
     showPlusOne.value = true;
 
-    await new Promise(resolve => setTimeout(resolve, 4000));
-
-    showPlusOne.value = false;
+    setTimeout(() => {
+      showPlusOne.value = false;
+    }, 4000);
   }
 };
 
+// Handle mouse events
 const handleMouseDown = () => {
-  if (0 < store.userData.energy) {
+  if (userData.value && userData.value.energy > 0) {
     isActive.value = true;
   }
 };
@@ -67,7 +47,22 @@ const handleMouseDown = () => {
 const handleMouseUp = () => {
   isActive.value = false;
 };
+
+// Handle updates from server
+const handleServerUpdate = (updatedData: any) => {
+  console.log("Received user data from server:", updatedData);
+  store.userData = { ...store.userData, ...updatedData };
+};
+
+onMounted(() => {
+  socket.on('user_data_update', handleServerUpdate);
+});
+
+onBeforeUnmount(() => {
+  socket.off('user_data_update', handleServerUpdate);
+});
 </script>
+
 
 <template>
   <div class="balance-container">
@@ -80,14 +75,13 @@ const handleMouseUp = () => {
         @touchend="handleMouseUp"
         @click="incrementBalance"
         src="https://i.imgur.com/gpiwDfh.png"
-        :class="{
-        active: isActive,
-        disabled: store.userData.energy <= 0
-      }"
-        :style="{ opacity: store.userData.energy <= 0 ? 0.5 : 1 }"
+        :class="{ active: isActive, disabled: store.userData && store.userData.energy <= 0 }"
+        :style="{ opacity: store.userData && store.userData.energy <= 0 ? 0.5 : 1 }"
     />
     <transition name="fade-move">
-      <div v-if="showPlusOne" :key="plusOneKey" class="plus-one" :style="plusOnePosition">+{{ store.userData.coin_multiplier }}</div>
+      <div v-if="showPlusOne" :key="plusOneKey" class="plus-one" :style="plusOnePosition">
+        +{{ store.userData && store.userData.coin_multiplier }}
+      </div>
     </transition>
   </div>
 </template>
