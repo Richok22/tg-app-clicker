@@ -64,11 +64,67 @@ To configure the server, follow these steps:
 
 ### 2. Client Configuration
 
-**Edit `.env`**
+   **Edit `.env`**
 
-In client directory, you need to change env file for API URL. Example:
-```env
-   VITE_API_URL=https://c5bf57662d9646.lhr.life
-```
+   In client directory, you need to change env file for API URL. Example:
+   ```env
+      VITE_API_URL=https://c5bf57662d9646.lhr.life
+   ```
 
+## Telegram integration with development server
+
+### 1. Start development servers for front-end and back-end
+
+   **Start terminal `cmd`**
+
+   And in both directorys server and client start command
+   ```cmd
+      npm run dev
+   ```
+### 2. Start forwading local URL's to public
+
+   You can start forwading using ngrok or localhost.run
+
+   In this example we gonna use localhost.run, to start forwading in terminal we need to launch localhost.run on out ports which we are using for development for vite and express default are 5173 and 3000, but for websocket we gonna use 3001 (They need to be in    
+   seperate terminals)
+   ```cmd
+      ssh -R 80:localhost:5173 nokey@localhost.run
+   ```
+   ```cmd
+      ssh -R 80:localhost:3001 nokey@localhost.run
+   ```
+### 2. Configure env files
+   Now we need to change our links on localhost link example: **https://3d1ad34d884d31.lhr.life** and SERVER cors we need to change link to our client link from localhost.run, and api of course
+   
+   ```index.js
+      const io = new Server(server, {
+          perMessageDeflate: false,
+          cors: {
+              origin: "LOCAlHOST.RUN LINK HERE",
+              methods: ["GET", "POST"],
+              credentials: true
+          }
+      });
+   ```
+
+### 3. Create bot and add link to webapp
+
+   1. **Open Telegram**: Use the Telegram app or web interface.
+   2. **Find BotFather**: Search for "BotFather" in Telegram. BotFather is the official bot for creating other bots.
+   3. **Start a Chat**: Click "Start" to begin a chat with BotFather.
+   4. **Create a New Bot**: Send the command `/newbot` to BotFather.
+   5. **Follow the Prompts**:
+      - **Name**: Provide a name for your bot.
+      - **Username**: Choose a unique username ending in `bot` (e.g., `my_test_bot`).
+
+   After successful creation, BotFather will provide you with a **Token**. Save this token as you will need it to configure your server .env file. And to add or webapp we need to
+
+   **Create a New webapp**: Send the command `/newapp` to BotFather.
+   **Choose out bot**: select bot.
+   **Enter title**: that tittle will shown in app.
+   **Enter description**: it will be seen in link.
+   **Upload picture**: in 640x360 pixels.
+   **Upload gif** if you want but we use `/empty`.
+   **Send url** YOU NEED TO SEND CLIENT, LOCALHOST.RUN LINK HERE
+   **Create app url** that link open our app with telegram data
 
