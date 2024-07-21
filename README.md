@@ -77,7 +77,7 @@ To configure the server, follow these steps:
 
    **Start terminal `cmd`**
 
-   And in both directorys server and client start command
+   Open terminals for both the server and client directories and run:
    ```cmd
       npm run dev
    ```
@@ -85,8 +85,7 @@ To configure the server, follow these steps:
 
    You can start forwading using ngrok or localhost.run
 
-   In this example we gonna use localhost.run, to start forwading in terminal we need to launch localhost.run on out ports which we are using for development for vite and express default are 5173 and 3000, but for websocket we gonna use 3001 (They need to be in    
-   seperate terminals)
+   In this example we gonna use localhost.run, to start forwading, in terminal we need to launch localhost.run on out ports which we are using for development for vite and express default are 5173 and 3000, but for websocket we gonna use 3001 (They need to be in seperate terminals)
    ```cmd
       ssh -R 80:localhost:5173 nokey@localhost.run
    ```
@@ -128,3 +127,4 @@ To configure the server, follow these steps:
    7. **Send url** YOU NEED TO SEND CLIENT, LOCALHOST.RUN LINK HERE
    7. **Create app url** that link open our app with telegram data
 
+   After that you can launch you web app with development server
