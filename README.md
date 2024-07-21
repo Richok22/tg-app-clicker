@@ -7,6 +7,7 @@ The Telegram Clicker web app is designed to allow users to interact with Telegra
 ## Prerequisites
 
 - Node.js and npm installed on your machine
+- Redis and SQL database
 
 ## Configuration
 
@@ -52,19 +53,22 @@ To configure the server, follow these steps:
 
 2. **Edit `.env`**
 
-In server directory, you need to change env file for value that user can't see like bot token. Example:
-```env
-   BOT_TOKEN=
-   WEBSOCKET_PORT=
-   PORT=
-   REDIS_SERVER=
-   CLIENT_URL=
-```
-### 1. Cliennt Configuration
+   In server directory, you need to change env file for value that user can't see like bot token. Example:
+   ```env
+      BOT_TOKEN=
+      WEBSOCKET_PORT=
+      PORT=
+      REDIS_SERVER=
+      CLIENT_URL=
+   ```
+
+### 2. Client Configuration
 
 **Edit `.env`**
+
 In client directory, you need to change env file for API URL. Example:
 ```env
    VITE_API_URL=https://c5bf57662d9646.lhr.life
 ```
+
 
