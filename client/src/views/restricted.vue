@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import {useI18n} from "vue-i18n";
 
+const { t } = useI18n();
 </script>
 
 <template>
   <div>
-    <h2 class="main-text">Ну шо ты маленький привет! <br> <br> Иди тапай на телефончике!</h2>
+    <h2 class="main-text">{{ t('restricted') }}</h2>
   </div>
 
 </template>

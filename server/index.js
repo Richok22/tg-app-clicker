@@ -16,7 +16,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-    origin: ['https://1e3e88df6d97a2.lhr.life'], // List the allowed origins
+    origin: ["https://a42eb49ffb1cb4.lhr.life"], // List the allowed origins
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
@@ -32,21 +32,35 @@ const bot = new Telegraf(process.env.BOT_TOKEN, {
     },
 });
 
-bot.start((ctx) => {
-    // Send a hello message and options button
-    ctx.reply('Hello! What would you like to do?', {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: 'Start farm', url: 'https://t.me/joebiden666trapstarbot/dev?mode=compact' }]
-            ]
+bot.start(async (ctx) => {
+    bot.start(async (ctx) => {
+        const startPayload = ctx.message.text;
+        const referralCode = startPayload.split('startapp=')[1];
+
+        if (referralCode) {
+            console.log(`Received referral code: ${referralCode}`);
+
+            await ctx.reply('Welcome! You have started the bot with a referral code.');
+
+            // Generate a link to your Web App
+            const webAppLink = `https://t.me/joebiden666trapstarbot?startapp=${encodeURIComponent(referralCode)}`;
+
+            await ctx.reply('Click the link to open the Web App:', {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: 'Open Web App', url: webAppLink }]
+                    ]
+                }
+            });
+        } else {
+            await ctx.reply('Welcome! You have started the bot without a referral code.');
         }
     });
 });
-
 const io = new Server(server, {
     perMessageDeflate: false,
     cors: {
-        origin: "https://1e3e88df6d97a2.lhr.life", // Replace with your frontend URL
+        origin: "https://a42eb49ffb1cb4.lhr.life", // Replace with your frontend URL
         methods: ["GET", "POST"],
         credentials: true
     }
@@ -150,7 +164,10 @@ function startSyncInterval() {
         // Authenticate and sync Sequelize
         await sequelize.authenticate();
         console.log('Connection has been established successfully.');
-        await sequelize.sync();
+
+        // Synchronize the database, creating tables if they do not exist
+        await sequelize.sync({ alter: true }); // Use `alter` to automatically adjust existing tables
+
         console.log('Database synchronized.');
 
         // Start the server

@@ -12,6 +12,7 @@ const store = useGlobalStore();
 onMounted(async () => {
   console.log("Fetching user data...");
   await store.fetchUserData();
+  await store.fetchFriends();
 
   console.log("User data fetched:", store.userData);
   console.log("Is Loading:", store.isLoading);

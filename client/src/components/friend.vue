@@ -1,29 +1,19 @@
-<script setup lang="ts">
-
-
-// Task structure
-import {ref} from "vue";
-
-const friends = ref([
-  {
-    id: 1,
-    username: 'Kinaki',
-    balance: '100000'
-  },
-]);
-
-</script>
-
 <template>
-  <div style="margin-top: 4rem" class="friends-container">
-    <div v-for="friend in friends" :key="friend.id" class="friend">
-      <div class="friend-about">
-        <p class="about">{{friend.username}}</p>
-        <p style="margin-top: 0.3rem; opacity: 1;" class="about">{{ friend.balance }}</p>
-      </div>
+  <div style="margin-top: 1rem" class="friend" v-for="friend in friends" :key="friend.id">
+    <div class="friend-about">
+      <p class="about">{{ friend.username }}</p>
+      <p class="about" style="margin-top: 0.3rem; opacity: 1;">{{ friend.balance }}</p>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { defineProps } from 'vue';
+
+defineProps<{
+  friends: { id: number; username: string; balance: string }[];
+}>();
+</script>
 
 <style lang="scss">
 @import "../assets/style.scss";
@@ -33,7 +23,7 @@ const friends = ref([
 }
 
 .friends-container {
-  margin-top: 1rem; // Space above the info section
+  margin-top: 2rem; // Space above the info section
   min-height: 2.875rem;
   min-width: 80%; // Set min-width to 80% of container
   max-width: 80%; // Restrict max-width for consistency
@@ -46,8 +36,13 @@ const friends = ref([
 }
 
 .friend {
-  margin: 0.9rem;
-  align-items: center; // Center items vertically
+  background: #272932;
+  box-shadow: 0px 4px 7.1px -10px rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+
+  width: 90%;
+  margin: 0.3rem;
+  align-items: revert; // Center items vertically
   justify-content: left // Space between the items
 }
 
@@ -55,7 +50,7 @@ const friends = ref([
   color: $fontColor;
   opacity: 0.6;
   font-size: 13px;
-  margin: 0 0.5rem; // Add horizontal margin for spacing
+  margin: 0.3rem 0.5rem; // Add horizontal margin for spacing
   align-items: center; // Center items vertically
 }
 

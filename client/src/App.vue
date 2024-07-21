@@ -24,7 +24,7 @@ onMounted(async () => {
     }
 
     // Navigation logic based on platform
-    if (userPlatform === 'tdesktop' || userPlatform === 'web') {
+    if (userPlatform === 'tdesktop' || userPlatform === 'web' /*|| useWebApp().initDataUnsafe.user?.id === undefined || null */) {
       console.log('Navigating to /restricted');
       await router.push({path: '/restricted'});
     } else {

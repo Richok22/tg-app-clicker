@@ -1,18 +1,27 @@
-<!-- src/views/tasks.vue -->
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import Dashboard from "../components/dashboard.vue";
 import Friend from "../components/friend.vue";
 import { useGlobalStore } from '../store/globalStore.ts';
-import {useWebAppNavigation} from "vue-tg";
-import {useI18n} from "vue-i18n";
+import { useWebAppNavigation } from "vue-tg";
+import { useI18n } from "vue-i18n";
+
 const { t } = useI18n();
+const store = useGlobalStore();
+const { openTelegramLink } = useWebAppNavigation();
 
-let store = useGlobalStore();
-
-const { openTelegramLink } = useWebAppNavigation(); // Destructure the function from useWebAppNavigation
 const openLink = () => {
-  openTelegramLink(`https://t.me/share/url?url=t.me/joebiden666trapstarbot/start?referralCode=${store.userData?.referralCode}&text=%F0%9F%92%B0Catizen%3A%20Unleash%2C%20Play%2C%20Earn%20-%20Where%20Every%20Game%20Leads%20to%20an%20Airdrop%20Adventure!%0A%F0%9F%8E%81Let%27s%20play-to-earn%20airdrop%20right%20now!`); // Open the Telegram channel link
+  const referralCode = store.userData?.referralCode;
+  if (referralCode) {
+    const botUrl = `https://t.me/joebiden666trapstarbot/app?startapp=${encodeURIComponent(referralCode)}`;
+    const text = '💰Catizen: Unleash, Play, Earn - Where Every Game Leads to an Airdrop Adventure!\n🎁Let\'s play-to-earn airdrop right now!';
+    const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(text)}`;
+    openTelegramLink(fullUrl);
+  } else {
+    console.error('Referral code is missing.');
+  }
 };
+
 </script>
 
 <template>
@@ -22,7 +31,7 @@ const openLink = () => {
     </div>
   </div>
   <div class="frens-container">
-    <friend />
+    <friend :friends="store.friends" />
   </div>
   <button @click="openLink">{{ t('invite') }}</button>
   <dashboard />
@@ -33,8 +42,8 @@ const openLink = () => {
 
 .frens-container {
   display: flex;
-  flex-direction: column; // Stack elements vertically
-  align-items: center; // Center items horizontally
+  flex-direction: column;
+  align-items: center;
   transition: background-color 0.3s, color 0.3s;
   background-color: #1C1C1D;
   border-radius: 15px;

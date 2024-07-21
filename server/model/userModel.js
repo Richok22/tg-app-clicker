@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const User = sequelize.define('User', {
     tgId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.BIGINT,
         allowNull: false,
         unique: true,
         primaryKey: true,
@@ -61,17 +61,19 @@ const User = sequelize.define('User', {
         defaultValue: "https://static.vecteezy.com/system/resources/thumbnails/005/545/335/small/user-sign-icon-person-symbol-human-avatar-isolated-on-white-backogrund-vector.jpg"
     },
     referralCode: {
-        type: DataTypes.UUID,
+        type: DataTypes.UUID(255),
         defaultValue: uuidv4,
-        unique: true
+        allowNull: true
     },
     friends: {
-        type: DataTypes.JSON, // Store as JSON string
+        type: DataTypes.JSON, // Store as JSON array
         allowNull: true,
+        defaultValue: []
     }
 }, {
-    timestamps: true, // Ensure Sequelize manages createdAt and updatedAt
-    freezeTableName: true, // Prevent Sequelize from pluralizing the table name
+    timestamps: true,
+    freezeTableName: true,
+    indexes: [{ unique: true, fields: ["referralCode"] }],
 });
 
 module.exports = User;

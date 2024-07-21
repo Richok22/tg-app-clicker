@@ -15,5 +15,13 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "plugins": [
+    [
+      "@babel/plugin-proposal-optional-chaining-assign",
+      {
+        "version": "2023-07"
+      }
+    ]
+  ]
 }
