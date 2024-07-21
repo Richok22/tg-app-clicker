@@ -53,14 +53,14 @@ To configure the server, follow these steps:
 
 2. **Edit `.env`**
 
-   In server directory, you need to change env file for value that user can't see like bot token. Example:
-   ```env
-      BOT_TOKEN=
-      WEBSOCKET_PORT=
-      PORT=
-      REDIS_SERVER=
-      CLIENT_URL=
-   ```
+      In server directory, you need to change env file for value that user can't see like bot token. Example:
+      ```env
+         BOT_TOKEN=
+         WEBSOCKET_PORT=
+         PORT=
+         REDIS_SERVER=
+         CLIENT_URL=
+      ```
 
 ### 2. Client Configuration
 
@@ -119,12 +119,12 @@ To configure the server, follow these steps:
 
    After successful creation, BotFather will provide you with a **Token**. Save this token as you will need it to configure your server .env file. And to add or webapp we need to
 
-   **Create a New webapp**: Send the command `/newapp` to BotFather.
-   **Choose out bot**: select bot.
-   **Enter title**: that tittle will shown in app.
-   **Enter description**: it will be seen in link.
-   **Upload picture**: in 640x360 pixels.
-   **Upload gif** if you want but we use `/empty`.
-   **Send url** YOU NEED TO SEND CLIENT, LOCALHOST.RUN LINK HERE
-   **Create app url** that link open our app with telegram data
+   1. **Create a New webapp**: Send the command `/newapp` to BotFather.
+   2. **Choose out bot**: select bot.
+   3. **Enter title**: that tittle will shown in app.
+   4. **Enter description**: it will be seen in link.
+   5. **Upload picture**: in 640x360 pixels.
+   6. **Upload gif** if you want but we use `/empty`.
+   7. **Send url** YOU NEED TO SEND CLIENT, LOCALHOST.RUN LINK HERE
+   7. **Create app url** that link open our app with telegram data
 
