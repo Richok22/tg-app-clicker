@@ -8,7 +8,7 @@
       "port": 3306
     },
     "redis": {
-      "request_interval": 5000
+      "request_interval": 3000
     }
   },
   "default_values": {
@@ -21,10 +21,13 @@
     "coin_multiplier": 1,
     "energy_multiplier": 1,
     "photoUrl": "",
-    "referralCoins": 400
+    "referralCoins": 2000,
+    "referralBonus": 1000,
+    "premiumBonus": 3000
   },
   "default_upgrades": {
-    "coin_multiplier_upgrade": 3,
-    "energy_restore_upgrade": 3
+    "coin_multiplier_upgrade": 4,
+    "energy_restore_upgrade": 5,
+    "exp_upgrade_per_lvl": 2
   }
 }

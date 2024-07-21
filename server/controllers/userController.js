@@ -3,8 +3,8 @@ const userService = require('../service/userService');
 class UserController {
     async registration(req, res) {
         try {
-            const { tgId, username, photoUrl, referralCode } = req.body;
-            const userData = await userService.registration(tgId, username, photoUrl, referralCode);
+            const { tgId, username, photoUrl, referralCode, is_premium } = req.body;
+            const userData = await userService.registration(tgId, username, photoUrl, referralCode, is_premium);
 
             return res.status(200).json(userData);
         } catch (e) {

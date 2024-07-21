@@ -21,6 +21,7 @@ type UserData = {
     energy_multiplier: number;
     activeTab: string;
     referralCode: string;
+    is_premium: boolean;
 }
 
 interface Task {
@@ -92,12 +93,13 @@ export const useGlobalStore = defineStore('global', {
                     username: this.userData.username,
                     photoUrl: this.userData.photoUrl || '',
                     referralCode: this.userData.referralCode,
+                    is_premium: this.userData.is_premium,
                 });
 
                 if (response.status === 200) {
                     console.log('User registered successfully:', response.data);
                     if (response.data.created) {
-                        // User was created, additional logic if needed
+
                     } else {
                         // User already exists, load the user data
                         await this.loadUserData();
@@ -138,17 +140,8 @@ export const useGlobalStore = defineStore('global', {
             return {
                 tgId: user?.id || '',
                 username: user?.first_name || '',
-                balance: 0,
-                lvl: 1,
-                exp: 0,
-                maxExp: 10,
-                daily: 0,
-                energy: 1000,
-                maxEnergy: 1000,
-                coin_multiplier: 1,
-                energy_multiplier: 1,
-                activeTab: "main",
-                referralCode: referralCode
+                referralCode: referralCode,
+                is_premium: user?.is_premium,
             };
         },
         startLoading() {

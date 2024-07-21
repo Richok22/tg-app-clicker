@@ -18,7 +18,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-    origin: ["https://a42eb49ffb1cb4.lhr.life"], // List the allowed origins
+    origin: ["https://35216fbacbd87c.lhr.life"], // List the allowed origins
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
@@ -62,7 +62,7 @@ bot.start(async (ctx) => {
 const io = new Server(server, {
     perMessageDeflate: false,
     cors: {
-        origin: "https://a42eb49ffb1cb4.lhr.life", // Replace with your frontend URL
+        origin: "https://35216fbacbd87c.lhr.life", // Replace with your frontend URL
         methods: ["GET", "POST"],
         credentials: true
     }
@@ -190,15 +190,16 @@ function startSyncInterval() {
                         userData = await redis_db.getUserDataFromSQL(id);
                     }
 
-                    // Perform the user tap updates
-                    userData.balance += 1 * userData.coin_multiplier;
+                    // Increment balance by coin multiplier
+                    userData.balance += userData.coin_multiplier;
                     userData.energy--;
                     userData.exp++;
 
-                    if (userData.maxExp === userData.exp) {
+                    // Level up logic
+                    if (userData.exp >= userData.maxExp) {
                         userData.lvl++;
-                        userData.maxExp *= 3;
                         userData.exp = 0;
+                        userData.maxExp *= config.default_upgrades.exp_upgrade_per_lvl;
 
                         if (userData.lvl >= config.default_upgrades.energy_restore_upgrade) {
                             userData.coin_multiplier += 1;
@@ -210,8 +211,10 @@ function startSyncInterval() {
                         }
                     }
 
+                    // Save updated user data to Redis
                     await redis_db.saveUserDataToRedis(userData);
 
+                    // Emit the updated user data back to the client
                     socket.emit('user_data_update', {
                         balance: userData.balance,
                         lvl: userData.lvl,
@@ -224,11 +227,14 @@ function startSyncInterval() {
                         energy_multiplier: userData.energy_multiplier
                     });
 
+                    console.log(`Updated balance for user ${id}: ${userData.balance}`);
+
                 } catch (error) {
                     console.error('Error handling user tap:', error);
                 }
             });
         });
+
 
         // Start the bot and Express server
         app.listen(port, () => {

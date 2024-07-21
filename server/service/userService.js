@@ -3,7 +3,7 @@ const sequelize = require('../db_sql');
 const config = require('../config.json')
 
 class UserService {
-    async registration(tgId, username, photoUrl, referralCode) {
+    async registration(tgId, username, photoUrl, referralCode, is_premium) {
         try {
             tgId = Number(tgId); // Convert tgId to number
 
@@ -12,7 +12,8 @@ class UserService {
                 tgId,
                 username,
                 photoUrl,
-                referralCode
+                referralCode,
+                is_premium
             });
 
             // Check if user with tgId already exists
@@ -22,11 +23,16 @@ class UserService {
                 throw new Error('User already exists');
             }
 
+            // Set initial balance
+            let initialBalance = is_premium ? config.default_values.premiumBonus : 0;
+
             // Create new user
             const newUser = await User.create({
                 tgId,
                 username,
                 photoUrl,
+                balance: initialBalance,
+                is_premium
             });
 
             console.log(`New user created with tgId ${tgId}.`);
@@ -48,7 +54,11 @@ class UserService {
 
                     // Update the referrer's balance
                     await referrer.update({ balance: referrer.balance + config.default_values.referralCoins });
-                    console.log(`Updated referrer's balance by 200.`);
+                    console.log(`Updated referrer's balance by ${config.default_values.referralCoins}.`);
+
+                    // Update the new user's balance by 1000 coins for using a referral code
+                    await newUser.update({ balance: newUser.balance + config.default_values.referralBonus });
+                    console.log(`Updated new user's balance by 1000 coins for using referral code.`);
                 } else {
                     console.warn('Invalid referral code:', referralCode);
                 }
