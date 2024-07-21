@@ -1,8 +1,9 @@
 const { createClient } = require('redis');
 const User = require('./model/userModel'); // Import User model
+const config = require('./config.json');
 
 let redisClient;
-const REQUEST_INTERVAL = 10000; // 10 seconds interval for syncing
+const REQUEST_INTERVAL = config.db.redis.request_interval; // 10 seconds interval for syncing
 
 // Initialize Redis connection
 async function connectToRedis() {

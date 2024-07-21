@@ -12,6 +12,8 @@ const redis_db = require('./db');
 const sequelize = require('./db_sql'); // Import Sequelize instance
 const User = require('./model/userModel'); // Ensure correct path
 
+const config = require('./config.json');
+
 const app = express();
 
 // CORS configuration
@@ -198,11 +200,11 @@ function startSyncInterval() {
                         userData.maxExp *= 3;
                         userData.exp = 0;
 
-                        if (userData.lvl >= 3) {
+                        if (userData.lvl >= config.default_upgrades.energy_restore_upgrade) {
                             userData.coin_multiplier += 1;
                         }
 
-                        if (userData.lvl >= 5) {
+                        if (userData.lvl >= config.default_upgrades.coin_multiplier_upgrade) {
                             userData.maxEnergy *= userData.energy_multiplier;
                             userData.energy = userData.maxEnergy;
                         }

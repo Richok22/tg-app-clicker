@@ -1,5 +1,6 @@
 const User = require('../model/userModel');
 const sequelize = require('../db_sql');
+const config = require('../config.json')
 
 class UserService {
     async registration(tgId, username, photoUrl, referralCode) {
@@ -46,7 +47,7 @@ class UserService {
                     console.log(`Added tgId ${tgId} to referrer's friends list.`);
 
                     // Update the referrer's balance
-                    await referrer.update({ balance: referrer.balance + 200 });
+                    await referrer.update({ balance: referrer.balance + config.default_values.referralCoins });
                     console.log(`Updated referrer's balance by 200.`);
                 } else {
                     console.warn('Invalid referral code:', referralCode);

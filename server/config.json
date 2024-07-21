@@ -1,0 +1,30 @@
+{
+  "db": {
+    "sql": {
+      "host": "localhost",
+      "username": "root",
+      "password": "",
+      "database": "riot",
+      "port": 3306
+    },
+    "redis": {
+      "request_interval": 5000
+    }
+  },
+  "default_values": {
+    "balance": 0,
+    "lvl": 1,
+    "maxExp": 10,
+    "daily": 0,
+    "energy": 1000,
+    "maxEnergy": 1000,
+    "coin_multiplier": 1,
+    "energy_multiplier": 1,
+    "photoUrl": "",
+    "referralCoins": 400
+  },
+  "default_upgrades": {
+    "coin_multiplier_upgrade": 3,
+    "energy_restore_upgrade": 3
+  }
+}
