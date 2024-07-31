@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
 import Dashboard from "../components/dashboard.vue";
 import Friend from "../components/friend.vue";
 import { useGlobalStore } from '../store/globalStore.ts';

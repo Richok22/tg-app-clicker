@@ -3,7 +3,9 @@
 import Dashboard from "../components/dashboard.vue";
 import Task from "../components/task.vue";
 import {useI18n} from "vue-i18n";
+import {useGlobalStore} from "../store/globalStore.ts";
 const { t } = useI18n();
+const store = useGlobalStore();
 </script>
 
 <template>
@@ -12,8 +14,8 @@ const { t } = useI18n();
       <h2>{{ t('tasks') }}</h2>
     </div>
   </div>
-  <div class="tasks-container">
-    <task />
+  <div class="tasks-container" >
+    <task :tasks="store.tasks" />
   </div>
   <dashboard></dashboard>
 </template>

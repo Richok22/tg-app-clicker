@@ -1,74 +1,41 @@
 const User = require('../model/userModel');
 const sequelize = require('../db_sql');
-const config = require('../config.json')
+const config = require('../config.json');
+const TokenService = require('./tokenService'); // Import the TokenService
 
 class UserService {
     async registration(tgId, username, photoUrl, referralCode, is_premium) {
         try {
-            tgId = Number(tgId); // Convert tgId to number
-
-            // Log the parameters received
-            console.log('Registration parameters:', {
-                tgId,
-                username,
-                photoUrl,
-                referralCode,
-                is_premium
-            });
+            tgId = Number(tgId);
 
             // Check if user with tgId already exists
             const existingUser = await User.findByPk(tgId);
             if (existingUser) {
-                console.log(`User with tgId ${tgId} already exists.`);
                 throw new Error('User already exists');
             }
 
             // Set initial balance
             let initialBalance = is_premium ? config.default_values.premiumBonus : 0;
 
-            // Create new user
+            // Generate JWT tokens
+            const tokens = await TokenService.generateToken({ tgId });
+
+            // Create new user with tokens
             const newUser = await User.create({
                 tgId,
                 username,
                 photoUrl,
                 balance: initialBalance,
-                is_premium
+                is_premium,
+                accessToken: tokens.accessToken, // Ensure this is a string
+                refreshToken: tokens.refreshToken  // Ensure this is a string
             });
 
-            console.log(`New user created with tgId ${tgId}.`);
+            // Handle referral code logic if applicable...
 
-            if (referralCode) {
-                // Find referrer by referral code
-                const referrer = await User.findOne({ where: { referralCode } });
-                if (referrer) {
-                    // Update the referrer's friends list using JSON_ARRAY_APPEND
-                    await User.update(
-                        {
-                            friends: sequelize.fn('JSON_ARRAY_APPEND', sequelize.col('friends'), '$', tgId)
-                        },
-                        {
-                            where: { tgId: referrer.tgId }
-                        }
-                    );
-                    console.log(`Added tgId ${tgId} to referrer's friends list.`);
-
-                    // Update the referrer's balance
-                    await referrer.update({ balance: referrer.balance + config.default_values.referralCoins });
-                    console.log(`Updated referrer's balance by ${config.default_values.referralCoins}.`);
-
-                    // Update the new user's balance by 1000 coins for using a referral code
-                    await newUser.update({ balance: newUser.balance + config.default_values.referralBonus });
-                    console.log(`Updated new user's balance by 1000 coins for using referral code.`);
-                } else {
-                    console.warn('Invalid referral code:', referralCode);
-                }
-            } else {
-                console.log('No referral code provided.');
-            }
-
-            return newUser;
+            return { newUser, tokens };
         } catch (error) {
-            console.error('Detailed error:', error);
+            console.error('Registration failed:', error);
             throw new Error(`Registration failed: ${error.message}`);
         }
     }

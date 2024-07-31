@@ -10,7 +10,8 @@ const cors = require('cors');
 
 const redis_db = require('./db');
 const sequelize = require('./db_sql'); // Import Sequelize instance
-const User = require('./model/userModel'); // Ensure correct path
+const User = require('./model/userModel');
+const Task = require('./model/taskModel'); // Ensure correct path
 
 const config = require('./config.json');
 
@@ -33,32 +34,33 @@ const bot = new Telegraf(process.env.BOT_TOKEN, {
         webhookReplyTimeout: 5000, // Adjust timeout as needed (in milliseconds)
     },
 });
+const TaskService = require('./service/taskService');
+const taskService = new TaskService(bot.telegram);
 
 bot.start(async (ctx) => {
-    bot.start(async (ctx) => {
-        const startPayload = ctx.message.text;
-        const referralCode = startPayload.split('startapp=')[1];
+    const startPayload = ctx.message.text;
+    const referralCode = startPayload.split('startapp=')[1];
 
-        if (referralCode) {
-            console.log(`Received referral code: ${referralCode}`);
+    if (referralCode) {
+        console.log(`Received referral code: ${referralCode}`);
 
-            await ctx.reply('Welcome! You have started the bot with a referral code.');
+        await ctx.reply('Welcome! You have started the bot with a referral code.');
 
-            // Generate a link to your Web App
-            const webAppLink = `https://t.me/joebiden666trapstarbot?startapp=${encodeURIComponent(referralCode)}`;
+        // Generate a link to your Web App
+        const webAppLink = `https://t.me/joebiden666trapstarbot?startapp=${encodeURIComponent(referralCode)}`;
 
-            await ctx.reply('Click the link to open the Web App:', {
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: 'Open Web App', url: webAppLink }]
-                    ]
-                }
-            });
-        } else {
-            await ctx.reply('Welcome! You have started the bot without a referral code.');
-        }
-    });
+        await ctx.reply('Click the link to open the Web App:', {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: 'Open Web App', url: webAppLink }]
+                ]
+            }
+        });
+    } else {
+        await ctx.reply('Welcome! You have started the bot without a referral code.');
+    }
 });
+
 const io = new Server(server, {
     perMessageDeflate: false,
     cors: {
@@ -75,7 +77,6 @@ const REQUEST_INTERVAL = 3000; // Time to sync data if no requests
 const BATCH_SIZE = 50; // Number of records to process per batch
 
 let lastSyncLog = Date.now();
-
 let wasPreviousCheckEmpty = false; // Track the previous state of key presence
 
 async function syncRedisToSQL() {
@@ -234,7 +235,6 @@ function startSyncInterval() {
                 }
             });
         });
-
 
         // Start the bot and Express server
         app.listen(port, () => {

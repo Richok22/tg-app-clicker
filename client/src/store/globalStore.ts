@@ -42,7 +42,7 @@ type MyState = {
     userData?: UserData | null;
     FriendData?: FriendData | null;
     friends: [],
-    tasks: Task[];
+    tasks: [];
 };
 
 export const useGlobalStore = defineStore('global', {
@@ -59,6 +59,29 @@ export const useGlobalStore = defineStore('global', {
         getTasks: (state): Task[] => state.tasks,
     },
     actions: {
+        async fetchTasks() {
+            try {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tasks`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log("Response:", response); // Log the complete response object
+
+                if (response.status === 200 && response.headers['content-type'].includes('application/json')) {
+                    this.tasks = response.data;
+                    console.log("Tasks:", this.tasks); // Log the tasks
+                } else {
+                    console.error('Unexpected response:', response);
+                    this.tasks = [];
+                }
+            } catch (error) {
+                console.error('Failed to fetch tasks:', error.message); // Log the error message
+                console.error('Error details:', error); // Log the complete error object
+            }
+        },
         async fetchFriends() {
             try {
                 const response = await axios.get(import.meta.env.VITE_API_URL + `/api/friends/${this.userData?.tgId}`, {

@@ -69,6 +69,19 @@ const User = sequelize.define('User', {
         type: DataTypes.JSON, // Store as JSON array
         allowNull: true,
         defaultValue: []
+    },
+    tasks: {
+        type: DataTypes.JSON, // Store as JSON array
+        allowNull: true,
+        defaultValue: []
+    },
+    refreshToken: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    accessToken: {
+        type: DataTypes.STRING,
+        allowNull: false,
     }
 }, {
     timestamps: true,

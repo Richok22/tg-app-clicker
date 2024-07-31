@@ -1,60 +1,27 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useWebAppNavigation } from 'vue-tg';
-import axios from 'axios'; // Ensure the correct import
+import { useI18n } from 'vue-i18n';
+import {defineProps} from 'vue';
+import {useWebApp} from "vue-tg";
+let userLanguage = useWebApp().initDataUnsafe.user?.language_code;
+console.log(userLanguage)
+let en = "en"
+let ru = "ru"
 
-/// Uz serveru
-const { openTelegramLink } = useWebAppNavigation(); // Destructure the function from useWebAppNavigation
-const botToken = '6197432974:AAH7py0rZyGN5eokA4dPX2YLUF9bhOKwofo'; // Replace with your bot token
-const channelId = '-1002081419950'; // Replace with your channel ID
-
-const userId = ref(123456789); // Replace with the actual user ID
-
-// Task structure
-const tasks = ref([
-  {
-    id: 1,
-    description: 'Follow our telegram channel!',
-    completed: false,
-    isFollowing: false,
-  },
-]);
-
-const openLink = () => {
-  openTelegramLink('https://t.me/eu_clothes'); // Open the Telegram channel link
-};
-
-async function getChatMemberStatus(userId: number): Promise<void> {
-  try {
-    const response = await axios.get(`https://api.telegram.org/bot${botToken}/getChatMember`, {
-      params: {
-        chat_id: channelId,
-        user_id: userId
-      }
-    });
-
-    const status = response.data.result.status;
-    const following = status === 'member' || status === 'administrator' || status === 'creator';
-
-    // Update task's following status
-    tasks.value[0].isFollowing = following;
-
-    // Mark task as completed if following
-    tasks.value[0].completed = following;
-  } catch (error) {
-    console.error('Error checking chat member status:', error);
-  }
+if (userLanguage === undefined) {
+  userLanguage = en;
 }
 
-// Call the function on component mount
-onMounted(() => {
-  getChatMemberStatus(userId.value);
-});
+const { t } = useI18n();
+defineProps<{
+  tasks: { taskId: number; TaskName_en: string; TaskName_ru: string; type: string; link: string;}[];
+}>();
+
+
+
 </script>
 
 <template>
-  <div style="margin-top: 4rem" class="task-container">
-    <div v-for="task in tasks" :key="task.id" class="task" @click="task.isFollowing ? null : openLink()">
+    <div v-for="task in tasks" :key="task.taskId" class="task">
       <div class="tasks-about">
         <img
             style="margin-top: 0;"
@@ -63,11 +30,11 @@ onMounted(() => {
             src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/512px-Telegram_logo.svg.png"
             alt="Telegram icon"
         />
-        <p class="about">{{ task.completed ? 'Done!' : task.description }}</p>
-        <img style="margin-top: 0" v-if="!task.completed" class="arrow" src="https://i.imgur.com/4GbKEj6.png" alt="Arrow icon" />
+        <p class="about" v-if="userLanguage === en">{{task.TaskName_en}}</p>
+        <p class="about" v-if="userLanguage === ru">{{task.TaskName_ru}}</p>
+        <img style="margin-top: 0" class="arrow" src="https://i.imgur.com/4GbKEj6.png" alt="Arrow icon" />
       </div>
     </div>
-  </div>
 </template>
 
 <style lang="scss">
@@ -75,9 +42,6 @@ onMounted(() => {
 
 .task {
   margin-top: 1rem;
-}
-
-.task-container {
   margin-top: 1rem; // Space above the info section
   min-height: 2.875rem;
   min-width: 80%; // Set min-width to 80% of container
@@ -89,6 +53,7 @@ onMounted(() => {
   margin-left: auto; // Center the container
   margin-right: auto; // Center the container
 }
+
 
 .tasks-about {
   margin: 0.9rem;
